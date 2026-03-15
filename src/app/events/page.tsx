@@ -1,17 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockEvents } from "@/lib/mock-data";
+import { fetchEvents } from "@/lib/queries";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Event } from "@/types";
+
 export default function EventsPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
   const [joinedEvents, setJoinedEvents] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    fetchEvents().then((data) => {
+      setEvents(data);
+      setLoading(false);
+    });
+  }, []);
+
   // 日付順（近い順）
-  const sortedEvents = [...mockEvents].sort(
+  const sortedEvents = [...events].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
@@ -30,6 +41,12 @@ export default function EventsPage() {
   return (
     <div className="max-w-lg mx-auto px-4 py-4">
       <h1 className="text-2xl font-bold mb-4">イベント一覧</h1>
+
+      {loading && (
+        <p className="text-center text-gray-500 text-lg py-12">
+          読み込み中...
+        </p>
+      )}
 
       <div className="flex flex-col gap-4">
         {sortedEvents.map((event) => {

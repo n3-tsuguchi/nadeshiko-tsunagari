@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Header } from "@/components/layout/header";
-import { BottomTabBar } from "@/components/ui/tab-bar";
-import { PwaRegister } from "@/components/pwa-register";
+import { AuthProvider } from "@/lib/auth-context";
 import { ReadStatusProvider } from "@/lib/read-status-context";
+import { AppShell } from "@/components/layout/app-shell";
+import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,16 +28,13 @@ export default function RootLayout({
         <meta name="theme-color" content="#EC6D80" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body
-        className="antialiased"
-        suppressHydrationWarning
-      >
-        <ReadStatusProvider>
-          <PwaRegister />
-          <Header userName="田中 花子" />
-          <main className="pb-20">{children}</main>
-          <BottomTabBar userRole="resident" />
-        </ReadStatusProvider>
+      <body className="antialiased" suppressHydrationWarning>
+        <AuthProvider>
+          <ReadStatusProvider>
+            <PwaRegister />
+            <AppShell>{children}</AppShell>
+          </ReadStatusProvider>
+        </AuthProvider>
       </body>
     </html>
   );
