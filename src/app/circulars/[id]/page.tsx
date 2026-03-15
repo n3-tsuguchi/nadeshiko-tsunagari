@@ -1,13 +1,14 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { mockCirculars } from "@/lib/mock-data";
+import { fetchCircularById } from "@/lib/queries";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useReadStatus } from "@/lib/read-status-context";
+import type { CircularNotice } from "@/types";
 
 export default function CircularDetailPage({
   params,
@@ -15,13 +16,27 @@ export default function CircularDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const circular = mockCirculars.find((c) => c.id === id);
+  const [circular, setCircular] = useState<CircularNotice | null | undefined>(
+    undefined
+  );
+  const { isRead, toggleRead } = useReadStatus();
+
+  useEffect(() => {
+    fetchCircularById(id).then((data) => setCircular(data));
+  }, [id]);
+
+  if (circular === undefined) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-12 text-center text-gray-500 text-lg">
+        読み込み中...
+      </div>
+    );
+  }
 
   if (!circular) {
     notFound();
   }
 
-  const { isRead, toggleRead } = useReadStatus();
   const read = isRead(circular.id);
 
   return (

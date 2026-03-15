@@ -1,23 +1,38 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockCirculars } from "@/lib/mock-data";
+import { fetchCirculars } from "@/lib/queries";
 import { formatDate } from "@/lib/utils";
 import { Card, CardBody, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useReadStatus } from "@/lib/read-status-context";
+import type { CircularNotice } from "@/types";
 
 export default function NoticesPage() {
   const { isRead, toggleRead, unreadCount } = useReadStatus();
+  const [circulars, setCirculars] = useState<CircularNotice[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const unreadCirculars = mockCirculars.filter((c) => !isRead(c.id));
+  useEffect(() => {
+    fetchCirculars().then((data) => {
+      setCirculars(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const unreadCirculars = circulars.filter((c) => !isRead(c.id));
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-4">お知らせ</h1>
 
-      {unreadCirculars.length > 0 ? (
+      {loading ? (
+        <p className="text-center text-gray-500 text-lg py-12">
+          読み込み中...
+        </p>
+      ) : unreadCirculars.length > 0 ? (
         <>
           <p className="text-lg font-medium text-gray-700 mb-4">
             未読のお知らせ:{" "}

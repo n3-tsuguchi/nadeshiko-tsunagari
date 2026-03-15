@@ -1,51 +1,91 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import { mockCirculars } from "@/lib/mock-data";
-
-const CURRENT_USER_ID = "user-1";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
 
 type ReadStatusContextType = {
   isRead: (circularId: string) => boolean;
   toggleRead: (circularId: string) => void;
   unreadCount: number;
+  totalCount: number;
 };
 
 const ReadStatusContext = createContext<ReadStatusContextType | null>(null);
 
 export function ReadStatusProvider({ children }: { children: ReactNode }) {
-  // モックデータの既読状態を初期値としてSetで管理
-  const [readIds, setReadIds] = useState<Set<string>>(() => {
-    const initial = new Set<string>();
-    for (const c of mockCirculars) {
-      if (c.readBy.includes(CURRENT_USER_ID)) {
-        initial.add(c.id);
+  const { user } = useAuth();
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Supabaseから既読状態と回覧板総数を取得
+  useEffect(() => {
+    if (!user) return;
+
+    async function load() {
+      const [{ data: reads }, { count }] = await Promise.all([
+        supabase
+          .from("circular_reads")
+          .select("circular_id")
+          .eq("user_id", user!.id),
+        supabase
+          .from("circulars")
+          .select("*", { count: "exact", head: true }),
+      ]);
+
+      if (reads) {
+        setReadIds(new Set(reads.map((r) => r.circular_id)));
       }
+      setTotalCount(count ?? 0);
     }
-    return initial;
-  });
+    load();
+  }, [user]);
 
   const isRead = useCallback(
     (circularId: string) => readIds.has(circularId),
     [readIds]
   );
 
-  const toggleRead = useCallback((circularId: string) => {
-    setReadIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(circularId)) {
-        next.delete(circularId);
-      } else {
-        next.add(circularId);
-      }
-      return next;
-    });
-  }, []);
+  const toggleRead = useCallback(
+    (circularId: string) => {
+      if (!user) return;
 
-  const unreadCount = mockCirculars.length - readIds.size;
+      setReadIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(circularId)) {
+          next.delete(circularId);
+          supabase
+            .from("circular_reads")
+            .delete()
+            .eq("circular_id", circularId)
+            .eq("user_id", user.id)
+            .then();
+        } else {
+          next.add(circularId);
+          supabase
+            .from("circular_reads")
+            .insert({ circular_id: circularId, user_id: user.id })
+            .then();
+        }
+        return next;
+      });
+    },
+    [user]
+  );
+
+  const unreadCount = totalCount - readIds.size;
 
   return (
-    <ReadStatusContext.Provider value={{ isRead, toggleRead, unreadCount }}>
+    <ReadStatusContext.Provider
+      value={{ isRead, toggleRead, unreadCount, totalCount }}
+    >
       {children}
     </ReadStatusContext.Provider>
   );

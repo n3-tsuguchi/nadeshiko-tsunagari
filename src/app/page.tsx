@@ -1,24 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockCirculars } from "@/lib/mock-data";
+import { fetchCirculars } from "@/lib/queries";
 import { formatDate } from "@/lib/utils";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useReadStatus } from "@/lib/read-status-context";
+import type { CircularNotice } from "@/types";
 
 const categories = ["すべて", "区役所", "町会", "防災", "子育て", "その他"] as const;
 type CategoryFilter = (typeof categories)[number];
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("すべて");
+  const [circulars, setCirculars] = useState<CircularNotice[]>([]);
+  const [loading, setLoading] = useState(true);
   const { isRead, toggleRead } = useReadStatus();
+
+  useEffect(() => {
+    fetchCirculars().then((data) => {
+      setCirculars(data);
+      setLoading(false);
+    });
+  }, []);
 
   const filtered =
     activeCategory === "すべて"
-      ? mockCirculars
-      : mockCirculars.filter((c) => c.category === activeCategory);
+      ? circulars
+      : circulars.filter((c) => c.category === activeCategory);
 
   const urgents = filtered.filter((c) => c.isUrgent);
   const normals = filtered
@@ -47,6 +57,12 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {loading && (
+        <p className="text-center text-gray-500 text-lg py-12">
+          読み込み中...
+        </p>
+      )}
 
       {/* 緊急のお知らせ */}
       {urgents.map((circular) => (
@@ -131,7 +147,7 @@ export default function Home() {
         ))}
       </div>
 
-      {filtered.length === 0 && (
+      {!loading && filtered.length === 0 && (
         <p className="text-center text-gray-500 text-lg py-12">
           該当するお知らせはありません
         </p>
