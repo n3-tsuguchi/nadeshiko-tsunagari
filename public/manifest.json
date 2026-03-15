@@ -1,0 +1,14 @@
+{
+  "name": "なでしこつながり",
+  "short_name": "なでしこ",
+  "description": "東住吉区 地域活動支援アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#EC6D80",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
