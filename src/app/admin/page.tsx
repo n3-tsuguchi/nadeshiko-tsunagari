@@ -1,43 +1,72 @@
-import Link from 'next/link';
-import { Card, CardBody } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { mockCirculars, mockEvents, mockUsers } from '@/lib/mock-data';
-import { formatDate, formatTime } from '@/lib/utils';
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Card, CardBody } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { fetchCirculars, fetchEvents } from "@/lib/queries";
+import { formatDate, formatTime } from "@/lib/utils";
+import type { CircularNotice, Event } from "@/types";
 
 export default function AdminDashboard() {
+  const [circulars, setCirculars] = useState<CircularNotice[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchCirculars(), fetchEvents()]).then(([c, e]) => {
+      setCirculars(c);
+      setEvents(e);
+      setLoading(false);
+    });
+  }, []);
+
   // ─── 統計の計算 ───────────────────────────────────────
-  const totalCirculars = mockCirculars.length;
-  const totalReadEntries = mockCirculars.reduce(
+  const totalCirculars = circulars.length;
+  const totalReadEntries = circulars.reduce(
     (sum, c) => sum + c.readBy.length,
-    0,
+    0
   );
-  const totalPossibleReads = totalCirculars * mockUsers.filter((u) => u.role === 'resident').length;
+  const totalPossibleReads = totalCirculars * 3; // 仮の住民数
   const unreadRate =
     totalPossibleReads > 0
-      ? Math.round(((totalPossibleReads - totalReadEntries) / totalPossibleReads) * 100)
+      ? Math.round(
+          ((totalPossibleReads - totalReadEntries) / totalPossibleReads) * 100
+        )
       : 0;
 
-  const totalEvents = mockEvents.length;
+  const totalEvents = events.length;
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
-  const eventsThisMonth = mockEvents.filter((e) => {
+  const eventsThisMonth = events.filter((e) => {
     const d = new Date(e.date);
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   }).length;
 
-  const totalResidents = mockUsers.length;
-
   // 直近3件の回覧板（新しい順）
-  const recentCirculars = [...mockCirculars]
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+  const recentCirculars = [...circulars]
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    )
     .slice(0, 3);
 
   // 今後のイベント（日付が近い順）
-  const upcomingEvents = [...mockEvents]
+  const upcomingEvents = [...events]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 px-4 py-6 lg:px-8">
+        <p className="text-center text-gray-500 text-lg py-12">
+          読み込み中...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 lg:px-8">
@@ -48,13 +77,14 @@ export default function AdminDashboard() {
 
       {/* ─── 統計カード 2x2 ───────────────────────────────── */}
       <div className="mt-6 grid grid-cols-2 gap-4">
-        {/* 回覧板総数 / 未読率 */}
         <Card>
           <CardBody>
             <p className="text-base text-gray-500">回覧板</p>
             <p className="mt-1 text-3xl font-bold text-gray-900">
               {totalCirculars}
-              <span className="ml-1 text-lg font-normal text-gray-500">件</span>
+              <span className="ml-1 text-lg font-normal text-gray-500">
+                件
+              </span>
             </p>
             <p className="mt-1 text-base text-orange-600">
               未読率 {unreadRate}%
@@ -62,13 +92,14 @@ export default function AdminDashboard() {
           </CardBody>
         </Card>
 
-        {/* イベント総数 / 今月 */}
         <Card>
           <CardBody>
             <p className="text-base text-gray-500">イベント</p>
             <p className="mt-1 text-3xl font-bold text-gray-900">
               {totalEvents}
-              <span className="ml-1 text-lg font-normal text-gray-500">件</span>
+              <span className="ml-1 text-lg font-normal text-gray-500">
+                件
+              </span>
             </p>
             <p className="mt-1 text-base text-blue-600">
               今月 {eventsThisMonth}件
@@ -76,18 +107,18 @@ export default function AdminDashboard() {
           </CardBody>
         </Card>
 
-        {/* 登録住民数 */}
         <Card>
           <CardBody>
             <p className="text-base text-gray-500">登録住民</p>
             <p className="mt-1 text-3xl font-bold text-gray-900">
-              {totalResidents}
-              <span className="ml-1 text-lg font-normal text-gray-500">人</span>
+              3
+              <span className="ml-1 text-lg font-normal text-gray-500">
+                人
+              </span>
             </p>
           </CardBody>
         </Card>
 
-        {/* げんき確認 */}
         <Card>
           <CardBody>
             <p className="text-base text-gray-500">今日のげんき確認</p>
@@ -109,6 +140,11 @@ export default function AdminDashboard() {
             新しいイベントを作成
           </Button>
         </Link>
+        <Link href="/admin/users">
+          <Button variant="ghost" size="lg" fullWidth>
+            ユーザー管理
+          </Button>
+        </Link>
       </div>
 
       {/* ─── 最近の回覧板 ─────────────────────────────────── */}
@@ -116,7 +152,7 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-bold text-gray-900">最近の回覧板</h2>
         <div className="mt-4 space-y-4">
           {recentCirculars.map((c) => (
-            <Card key={c.id} variant={c.isUrgent ? 'urgent' : 'default'}>
+            <Card key={c.id} variant={c.isUrgent ? "urgent" : "default"}>
               <CardBody>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={c.category}>{c.category}</Badge>

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { mockEvents } from "@/lib/mock-data";
+import { fetchEventById } from "@/lib/queries";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { AlertButton } from "@/components/alert-button";
@@ -11,7 +11,7 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = mockEvents.find((e) => e.id === id);
+  const event = await fetchEventById(id);
 
   if (!event) {
     notFound();
