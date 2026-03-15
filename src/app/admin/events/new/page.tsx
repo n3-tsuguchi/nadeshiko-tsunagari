@@ -1,32 +1,62 @@
-'use client';
+"use client";
 
-import { useState, type FormEvent } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
 
 const EVENT_CATEGORIES = [
-  '地域',
-  '子育て',
-  '高齢者',
-  '防災',
-  'スポーツ',
-  'その他',
+  "地域",
+  "子育て",
+  "高齢者",
+  "防災",
+  "スポーツ",
+  "その他",
 ] as const;
 
 export default function NewEventPage() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [location, setLocation] = useState('');
-  const [organizer, setOrganizer] = useState('');
-  const [category, setCategory] = useState<string>(EVENT_CATEGORIES[0]);
-  const [maxParticipants, setMaxParticipants] = useState('');
+  const router = useRouter();
+  const { user } = useAuth();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [organizer, setOrganizer] = useState("");
+  const [category, setCategory] = useState<(typeof EVENT_CATEGORIES)[number]>(EVENT_CATEGORIES[0]);
+  const [maxParticipants, setMaxParticipants] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    alert('イベントを作成しました');
+    if (!user) return;
+    setSubmitting(true);
+    setError("");
+
+    const { error: insertError } = await supabase.from("events").insert({
+      title,
+      description,
+      date,
+      start_time: startTime,
+      end_time: endTime,
+      location,
+      organizer,
+      category,
+      max_participants: maxParticipants ? parseInt(maxParticipants) : null,
+      author_id: user.id,
+    });
+
+    if (insertError) {
+      setError("作成に失敗しました: " + insertError.message);
+      setSubmitting(false);
+      return;
+    }
+
+    router.push("/admin");
   }
 
   return (
@@ -47,6 +77,12 @@ export default function NewEventPage() {
         onSubmit={handleSubmit}
         className="mt-8 space-y-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:max-w-2xl"
       >
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-base">
+            {error}
+          </div>
+        )}
+
         {/* イベント名 */}
         <div className="space-y-2">
           <label
@@ -59,7 +95,6 @@ export default function NewEventPage() {
             id="event-title"
             name="title"
             type="text"
-            aria-label="イベント名"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -79,7 +114,6 @@ export default function NewEventPage() {
           <textarea
             id="event-description"
             name="description"
-            aria-label="イベントの説明"
             required
             rows={4}
             value={description}
@@ -101,7 +135,6 @@ export default function NewEventPage() {
             id="event-date"
             name="date"
             type="date"
-            aria-label="開催日"
             required
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -122,7 +155,6 @@ export default function NewEventPage() {
               id="event-start-time"
               name="startTime"
               type="time"
-              aria-label="開始時間"
               required
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
@@ -140,7 +172,6 @@ export default function NewEventPage() {
               id="event-end-time"
               name="endTime"
               type="time"
-              aria-label="終了時間"
               required
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
@@ -161,7 +192,6 @@ export default function NewEventPage() {
             id="event-location"
             name="location"
             type="text"
-            aria-label="開催場所"
             required
             value={location}
             onChange={(e) => setLocation(e.target.value)}
@@ -182,7 +212,6 @@ export default function NewEventPage() {
             id="event-organizer"
             name="organizer"
             type="text"
-            aria-label="主催者"
             required
             value={organizer}
             onChange={(e) => setOrganizer(e.target.value)}
@@ -202,9 +231,8 @@ export default function NewEventPage() {
           <select
             id="event-category"
             name="category"
-            aria-label="イベントのカテゴリ"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => setCategory(e.target.value as (typeof EVENT_CATEGORIES)[number])}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
           >
             {EVENT_CATEGORIES.map((cat) => (
@@ -230,7 +258,6 @@ export default function NewEventPage() {
             id="event-max-participants"
             name="maxParticipants"
             type="number"
-            aria-label="定員（任意）"
             min={1}
             value={maxParticipants}
             onChange={(e) => setMaxParticipants(e.target.value)}
@@ -240,8 +267,14 @@ export default function NewEventPage() {
         </div>
 
         {/* 送信ボタン */}
-        <Button type="submit" variant="primary" size="lg" fullWidth>
-          作成する
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          disabled={submitting}
+        >
+          {submitting ? "作成中..." : "作成する"}
         </Button>
       </form>
     </div>

@@ -1,20 +1,45 @@
-'use client';
+"use client";
 
-import { useState, type FormEvent } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
 
-const CATEGORIES = ['区役所', '町会', '防災', '子育て', 'その他'] as const;
+const CATEGORIES = ["区役所", "町会", "防災", "子育て", "その他"] as const;
 
 export default function NewCircularPage() {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<string>(CATEGORIES[0]);
-  const [content, setContent] = useState('');
+  const router = useRouter();
+  const { user } = useAuth();
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(CATEGORIES[0]);
+  const [content, setContent] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    alert('投稿しました');
+    if (!user) return;
+    setSubmitting(true);
+    setError("");
+
+    const { error: insertError } = await supabase.from("circulars").insert({
+      title,
+      content,
+      category,
+      is_urgent: isUrgent,
+      author_id: user.id,
+    });
+
+    if (insertError) {
+      setError("投稿に失敗しました: " + insertError.message);
+      setSubmitting(false);
+      return;
+    }
+
+    router.push("/admin");
   }
 
   return (
@@ -35,6 +60,12 @@ export default function NewCircularPage() {
         onSubmit={handleSubmit}
         className="mt-8 space-y-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:max-w-2xl"
       >
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-base">
+            {error}
+          </div>
+        )}
+
         {/* タイトル */}
         <div className="space-y-2">
           <label
@@ -47,7 +78,6 @@ export default function NewCircularPage() {
             id="circular-title"
             name="title"
             type="text"
-            aria-label="回覧板のタイトル"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -67,9 +97,8 @@ export default function NewCircularPage() {
           <select
             id="circular-category"
             name="category"
-            aria-label="回覧板のカテゴリ"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
           >
             {CATEGORIES.map((cat) => (
@@ -91,7 +120,6 @@ export default function NewCircularPage() {
           <textarea
             id="circular-content"
             name="content"
-            aria-label="回覧板の本文"
             required
             rows={6}
             value={content}
@@ -107,7 +135,6 @@ export default function NewCircularPage() {
             id="circular-urgent"
             name="isUrgent"
             type="checkbox"
-            aria-label="緊急のお知らせとして投稿する"
             checked={isUrgent}
             onChange={(e) => setIsUrgent(e.target.checked)}
             className="h-6 w-6 rounded border-gray-300 text-red-600 focus:ring-red-500"
@@ -121,8 +148,14 @@ export default function NewCircularPage() {
         </div>
 
         {/* 送信ボタン */}
-        <Button type="submit" variant="primary" size="lg" fullWidth>
-          投稿する
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          disabled={submitting}
+        >
+          {submitting ? "投稿中..." : "投稿する"}
         </Button>
       </form>
     </div>
