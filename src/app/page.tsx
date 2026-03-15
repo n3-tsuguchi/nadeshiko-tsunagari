@@ -101,7 +101,7 @@ export default function Home() {
                     : "bg-red-50 text-red-600 border-red-300 hover:bg-white",
                 ].join(" ")}
               >
-                {isRead(circular.id) ? "✓ 既読 → 未読に戻す" : "● 未読 → 既読にする"}
+                {isRead(circular.id) ? "✓ 既読" : "● 未読"}
               </button>
             </div>
           </Card>
@@ -140,7 +140,7 @@ export default function Home() {
                     : "bg-red-50 text-red-600 border-red-300 hover:bg-white",
                 ].join(" ")}
               >
-                {isRead(circular.id) ? "✓ 既読 → 未読に戻す" : "● 未読 → 既読にする"}
+                {isRead(circular.id) ? "✓ 既読" : "● 未読"}
               </button>
             </div>
           </Card>

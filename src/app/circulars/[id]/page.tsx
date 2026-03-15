@@ -80,7 +80,7 @@ export default function CircularDetailPage({
         fullWidth
         onClick={() => toggleRead(circular.id)}
       >
-        {read ? "未読に戻す" : "既読にする"}
+        {read ? "✓ 既読" : "● 未読"}
       </Button>
     </div>
   );
