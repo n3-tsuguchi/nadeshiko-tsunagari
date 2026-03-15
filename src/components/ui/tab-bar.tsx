@@ -13,7 +13,7 @@ type TabItem = {
 };
 
 const tabs: TabItem[] = [
-  { label: "回覧板", href: "/circulars", icon: "\uD83D\uDCCB" },
+  { label: "回覧板", href: "/", icon: "\uD83D\uDCCB" },
   { label: "イベント", href: "/events", icon: "\uD83D\uDCC5" },
   { label: "お知らせ", href: "/notices", icon: "\uD83D\uDD14" },
   {
@@ -44,7 +44,9 @@ export function BottomTabBar({ userRole = "resident" }: BottomTabBarProps) {
       <ul className="flex items-stretch justify-around max-w-lg mx-auto list-none m-0 p-0">
         {visibleTabs.map((tab) => {
           const isActive =
-            pathname === tab.href || pathname.startsWith(tab.href + "/");
+            tab.href === "/"
+              ? pathname === "/"
+              : pathname === tab.href || pathname.startsWith(tab.href + "/");
 
           return (
             <li key={tab.href} className="flex-1">

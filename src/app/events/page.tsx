@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { mockEvents } from "@/lib/mock-data";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/ui/card";
@@ -50,7 +51,12 @@ export default function EventsPage() {
 
               <CardBody>
                 <h2 className="text-xl font-bold leading-snug mb-2">
-                  {event.title}
+                  <Link
+                    href={`/events/${event.id}`}
+                    className="text-gray-900 hover:text-pink-700 hover:underline"
+                  >
+                    {event.title}
+                  </Link>
                 </h2>
 
                 <div className="flex flex-col gap-1.5 text-base text-gray-700 mb-3">

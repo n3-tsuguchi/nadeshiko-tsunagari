@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { mockCirculars } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export default function Home() {
 
       {/* 緊急のお知らせ */}
       {urgents.map((circular) => (
-        <div key={circular.id} className="mb-4">
+        <Link key={circular.id} href={`/circulars/${circular.id}`} className="block mb-4">
           <Card variant="urgent">
             <CardHeader className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
@@ -89,13 +90,14 @@ export default function Home() {
               </div>
             </CardBody>
           </Card>
-        </div>
+        </Link>
       ))}
 
       {/* 通常のお知らせ */}
       <div className="flex flex-col gap-4">
         {normals.map((circular) => (
-          <Card key={circular.id} variant="default">
+          <Link key={circular.id} href={`/circulars/${circular.id}`} className="block">
+          <Card variant="default">
             <CardHeader className="flex items-center justify-between gap-2">
               <Badge variant={circular.category} size="sm">
                 {circular.category}
@@ -124,6 +126,7 @@ export default function Home() {
               </div>
             </CardBody>
           </Card>
+          </Link>
         ))}
       </div>
 
