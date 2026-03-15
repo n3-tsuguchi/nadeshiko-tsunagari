@@ -135,6 +135,42 @@ export async function fetchEventById(id: string): Promise<Event | null> {
   };
 }
 
+// ─── 検索 ───────────────────────────────────────────────
+
+export async function searchCirculars(
+  query: string
+): Promise<CircularNotice[]> {
+  const { data: circulars, error } = await supabase
+    .from("circulars")
+    .select("*")
+    .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+    .order("published_at", { ascending: false });
+
+  if (error || !circulars) return [];
+
+  const { data: reads } = await supabase
+    .from("circular_reads")
+    .select("circular_id, user_id");
+
+  const readMap = new Map<string, string[]>();
+  for (const r of reads ?? []) {
+    const list = readMap.get(r.circular_id) ?? [];
+    list.push(r.user_id);
+    readMap.set(r.circular_id, list);
+  }
+
+  return circulars.map((c) => ({
+    id: c.id,
+    title: c.title,
+    content: c.content,
+    category: c.category as CircularNotice["category"],
+    publishedAt: c.published_at,
+    readBy: readMap.get(c.id) ?? [],
+    attachmentUrl: c.attachment_url ?? undefined,
+    isUrgent: c.is_urgent,
+  }));
+}
+
 // ─── 既読操作 ───────────────────────────────────────────
 
 export async function markAsRead(circularId: string, userId: string) {
