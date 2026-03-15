@@ -16,6 +16,7 @@ export default function NewCircularPage() {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(CATEGORIES[0]);
   const [content, setContent] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,12 +26,35 @@ export default function NewCircularPage() {
     setSubmitting(true);
     setError("");
 
+    let attachmentUrl: string | null = null;
+
+    // 添付ファイルをアップロード
+    if (attachment) {
+      const ext = attachment.name.split(".").pop();
+      const filePath = `circulars/${Date.now()}_${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("attachments")
+        .upload(filePath, attachment);
+
+      if (uploadError) {
+        setError("ファイルのアップロードに失敗しました: " + uploadError.message);
+        setSubmitting(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("attachments")
+        .getPublicUrl(filePath);
+      attachmentUrl = urlData.publicUrl;
+    }
+
     const { error: insertError } = await supabase.from("circulars").insert({
       title,
       content,
       category,
       is_urgent: isUrgent,
       author_id: user.id,
+      attachment_url: attachmentUrl,
     });
 
     if (insertError) {
@@ -127,6 +151,29 @@ export default function NewCircularPage() {
             placeholder="お知らせの内容を入力してください"
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg leading-relaxed text-gray-900 placeholder:text-gray-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
           />
+        </div>
+
+        {/* 添付ファイル */}
+        <div className="space-y-2">
+          <label
+            htmlFor="circular-attachment"
+            className="block text-lg font-semibold text-gray-900"
+          >
+            添付ファイル（画像・PDF）
+          </label>
+          <input
+            id="circular-attachment"
+            name="attachment"
+            type="file"
+            accept="image/*,.pdf"
+            onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 file:mr-3 file:rounded-lg file:border-0 file:bg-pink-50 file:px-4 file:py-2 file:text-base file:font-medium file:text-pink-700 cursor-pointer"
+          />
+          {attachment && (
+            <p className="text-base text-gray-500">
+              選択中: {attachment.name}
+            </p>
+          )}
         </div>
 
         {/* 緊急のお知らせ */}

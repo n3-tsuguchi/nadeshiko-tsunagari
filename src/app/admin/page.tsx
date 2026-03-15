@@ -140,6 +140,11 @@ export default function AdminDashboard() {
             新しいイベントを作成
           </Button>
         </Link>
+        <Link href="/admin/users">
+          <Button variant="ghost" size="lg" fullWidth>
+            ユーザー管理
+          </Button>
+        </Link>
       </div>
 
       {/* ─── 最近の回覧板 ─────────────────────────────────── */}
