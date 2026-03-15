@@ -18,6 +18,7 @@ const tabs: TabItem[] = [
   { label: "回覧板", href: "/", icon: "\uD83D\uDCCB" },
   { label: "イベント", href: "/events", icon: "\uD83D\uDCC5" },
   { label: "お知らせ", href: "/notices", icon: "\uD83D\uDD14", showBadge: "unread" },
+  { label: "マイページ", href: "/profile", icon: "\uD83D\uDC64" },
   {
     label: "管理",
     href: "/admin",

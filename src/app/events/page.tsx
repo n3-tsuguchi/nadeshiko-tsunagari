@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { fetchEvents } from "@/lib/queries";
+import { fetchEvents, joinEvent, leaveEvent } from "@/lib/queries";
+import { supabase } from "@/lib/supabase";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth-context";
 import type { Event } from "@/types";
 
 export default function EventsPage() {
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [joinedEvents, setJoinedEvents] = useState<Set<string>>(new Set());
+  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchEvents().then((data) => {
@@ -21,22 +24,60 @@ export default function EventsPage() {
     });
   }, []);
 
-  // 日付順（近い順）
+  // 自分の参加状況を取得
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("event_participations")
+      .select("event_id")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        if (data) {
+          setJoinedIds(new Set(data.map((d) => d.event_id)));
+        }
+      });
+  }, [user]);
+
   const sortedEvents = [...events].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  const handleJoin = (eventId: string) => {
-    setJoinedEvents((prev) => {
-      const next = new Set(prev);
-      if (next.has(eventId)) {
-        next.delete(eventId);
+  const handleJoin = useCallback(
+    async (eventId: string) => {
+      if (!user) return;
+      const isJoined = joinedIds.has(eventId);
+
+      // 楽観的UI更新
+      setJoinedIds((prev) => {
+        const next = new Set(prev);
+        if (isJoined) {
+          next.delete(eventId);
+        } else {
+          next.add(eventId);
+        }
+        return next;
+      });
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === eventId
+            ? {
+                ...e,
+                currentParticipants:
+                  e.currentParticipants + (isJoined ? -1 : 1),
+              }
+            : e
+        )
+      );
+
+      // DB更新
+      if (isJoined) {
+        await leaveEvent(eventId, user.id);
       } else {
-        next.add(eventId);
+        await joinEvent(eventId, user.id);
       }
-      return next;
-    });
-  };
+    },
+    [user, joinedIds]
+  );
 
   return (
     <div className="max-w-lg mx-auto px-4 py-4">
@@ -50,7 +91,7 @@ export default function EventsPage() {
 
       <div className="flex flex-col gap-4">
         {sortedEvents.map((event) => {
-          const isJoined = joinedEvents.has(event.id);
+          const isJoined = joinedIds.has(event.id);
           const isFull =
             event.maxParticipants !== undefined &&
             event.currentParticipants >= event.maxParticipants;
@@ -107,12 +148,10 @@ export default function EventsPage() {
                 {event.maxParticipants !== undefined && (
                   <div className="mt-3 text-base font-medium">
                     <span
-                      className={
-                        isFull ? "text-red-600" : "text-gray-700"
-                      }
+                      className={isFull ? "text-red-600" : "text-gray-700"}
                     >
-                      参加者 {event.currentParticipants + (isJoined ? 1 : 0)}{" "}
-                      / {event.maxParticipants} 人
+                      参加者 {event.currentParticipants} /{" "}
+                      {event.maxParticipants} 人
                     </span>
                     {isFull && !isJoined && (
                       <span className="ml-2 text-red-600 text-sm">

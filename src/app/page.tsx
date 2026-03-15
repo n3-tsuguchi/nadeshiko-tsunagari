@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { fetchCirculars } from "@/lib/queries";
+import { fetchCirculars, searchCirculars } from "@/lib/queries";
 import { formatDate } from "@/lib/utils";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,8 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("すべて");
   const [circulars, setCirculars] = useState<CircularNotice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searching, setSearching] = useState(false);
   const { isRead, toggleRead } = useReadStatus();
 
   useEffect(() => {
@@ -24,6 +26,21 @@ export default function Home() {
       setLoading(false);
     });
   }, []);
+
+  const handleSearch = useCallback(async () => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearching(true);
+      const data = await fetchCirculars();
+      setCirculars(data);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const results = await searchCirculars(q);
+    setCirculars(results);
+    setSearching(false);
+  }, [searchQuery]);
 
   const filtered =
     activeCategory === "すべて"
@@ -40,6 +57,32 @@ export default function Home() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-4">
+      {/* 検索バー */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSearch();
+        }}
+        className="mb-4"
+      >
+        <div className="flex gap-2">
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="回覧板を検索..."
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+          />
+          <button
+            type="submit"
+            disabled={searching}
+            className="shrink-0 rounded-lg bg-pink-600 px-5 py-3 text-lg font-medium text-white hover:bg-pink-700 transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            検索
+          </button>
+        </div>
+      </form>
+
       {/* カテゴリフィルター */}
       <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
         {categories.map((cat) => (

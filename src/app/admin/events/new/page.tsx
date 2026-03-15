@@ -28,6 +28,7 @@ export default function NewEventPage() {
   const [organizer, setOrganizer] = useState("");
   const [category, setCategory] = useState<(typeof EVENT_CATEGORIES)[number]>(EVENT_CATEGORIES[0]);
   const [maxParticipants, setMaxParticipants] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,6 +37,27 @@ export default function NewEventPage() {
     if (!user) return;
     setSubmitting(true);
     setError("");
+
+    let imageUrl: string | null = null;
+
+    if (image) {
+      const ext = image.name.split(".").pop();
+      const filePath = `events/${Date.now()}_${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("attachments")
+        .upload(filePath, image);
+
+      if (uploadError) {
+        setError("画像のアップロードに失敗しました: " + uploadError.message);
+        setSubmitting(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("attachments")
+        .getPublicUrl(filePath);
+      imageUrl = urlData.publicUrl;
+    }
 
     const { error: insertError } = await supabase.from("events").insert({
       title,
@@ -48,6 +70,7 @@ export default function NewEventPage() {
       category,
       max_participants: maxParticipants ? parseInt(maxParticipants) : null,
       author_id: user.id,
+      image_url: imageUrl,
     });
 
     if (insertError) {
@@ -264,6 +287,32 @@ export default function NewEventPage() {
             placeholder="例：50"
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 placeholder:text-gray-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
           />
+        </div>
+
+        {/* イベント画像 */}
+        <div className="space-y-2">
+          <label
+            htmlFor="event-image"
+            className="block text-lg font-semibold text-gray-900"
+          >
+            イベント画像
+            <span className="ml-2 text-base font-normal text-gray-500">
+              （任意）
+            </span>
+          </label>
+          <input
+            id="event-image"
+            name="image"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 file:mr-3 file:rounded-lg file:border-0 file:bg-pink-50 file:px-4 file:py-2 file:text-base file:font-medium file:text-pink-700 cursor-pointer"
+          />
+          {image && (
+            <p className="text-base text-gray-500">
+              選択中: {image.name}
+            </p>
+          )}
         </div>
 
         {/* 送信ボタン */}
