@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Header } from "@/components/layout/header";
 import { BottomTabBar } from "@/components/ui/tab-bar";
 import { PwaRegister } from "@/components/pwa-register";
+import { ReadStatusProvider } from "@/lib/read-status-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,10 +32,12 @@ export default function RootLayout({
         className="antialiased"
         suppressHydrationWarning
       >
-        <PwaRegister />
-        <Header userName="田中 花子" />
-        <main className="pb-20">{children}</main>
-        <BottomTabBar userRole="resident" />
+        <ReadStatusProvider>
+          <PwaRegister />
+          <Header userName="田中 花子" />
+          <main className="pb-20">{children}</main>
+          <BottomTabBar userRole="resident" />
+        </ReadStatusProvider>
       </body>
     </html>
   );

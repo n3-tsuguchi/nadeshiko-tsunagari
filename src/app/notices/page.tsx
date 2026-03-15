@@ -1,65 +1,63 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { mockCirculars } from '@/lib/mock-data';
-import { formatDate } from '@/lib/utils';
-import { Card, CardBody, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-
-const CURRENT_USER_ID = 'user-1';
+import Link from "next/link";
+import { mockCirculars } from "@/lib/mock-data";
+import { formatDate } from "@/lib/utils";
+import { Card, CardBody, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useReadStatus } from "@/lib/read-status-context";
 
 export default function NoticesPage() {
-  const [readIds, setReadIds] = useState<string[]>([]);
+  const { isRead, toggleRead, unreadCount } = useReadStatus();
 
-  const unreadCirculars = mockCirculars.filter(
-    (c) => !c.readBy.includes(CURRENT_USER_ID) && !readIds.includes(c.id),
-  );
-
-  const handleMarkAsRead = (id: string) => {
-    setReadIds((prev) => [...prev, id]);
-  };
+  const unreadCirculars = mockCirculars.filter((c) => !isRead(c.id));
 
   return (
-    <div className="px-4 py-6">
+    <div className="max-w-lg mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-4">お知らせ</h1>
 
       {unreadCirculars.length > 0 ? (
         <>
           <p className="text-lg font-medium text-gray-700 mb-4">
-            未読のお知らせ: <span className="text-pink-600">{unreadCirculars.length}件</span>
+            未読のお知らせ:{" "}
+            <span className="text-pink-600">{unreadCount}件</span>
           </p>
 
           <div className="space-y-4">
             {unreadCirculars.map((circular) => (
               <Card
                 key={circular.id}
-                variant={circular.isUrgent ? 'urgent' : 'default'}
+                variant={circular.isUrgent ? "urgent" : "default"}
               >
-                <CardBody>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={circular.category} size="sm">
-                      {circular.category}
-                    </Badge>
-                    {circular.isUrgent && (
-                      <span className="text-red-600 font-bold text-sm">緊急</span>
-                    )}
-                  </div>
-                  <h2 className="text-lg font-bold leading-snug mb-1">
-                    {circular.title}
-                  </h2>
-                  <p className="text-sm text-gray-500 mb-2">
-                    {formatDate(circular.publishedAt)}
-                  </p>
-                  <p className="text-base text-gray-700 line-clamp-2">
-                    {circular.content}
-                  </p>
-                </CardBody>
+                <Link href={`/circulars/${circular.id}`} className="block">
+                  <CardBody>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant={circular.category} size="sm">
+                        {circular.category}
+                      </Badge>
+                      {circular.isUrgent && (
+                        <span className="text-red-600 font-bold text-sm">
+                          緊急
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-lg font-bold leading-snug mb-1">
+                      {circular.title}
+                    </h2>
+                    <p className="text-sm text-gray-500 mb-2">
+                      {formatDate(circular.publishedAt)}
+                    </p>
+                    <p className="text-base text-gray-700 line-clamp-2">
+                      {circular.content}
+                    </p>
+                  </CardBody>
+                </Link>
                 <CardFooter>
                   <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleMarkAsRead(circular.id)}
+                    variant="primary"
+                    size="md"
+                    onClick={() => toggleRead(circular.id)}
                   >
                     既読にする
                   </Button>

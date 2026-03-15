@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useReadStatus } from "@/lib/read-status-context";
 
 type UserRole = "resident" | "officer" | "admin";
 
@@ -10,12 +11,13 @@ type TabItem = {
   href: string;
   icon: string;
   requireRole?: UserRole[];
+  showBadge?: "unread";
 };
 
 const tabs: TabItem[] = [
   { label: "回覧板", href: "/", icon: "\uD83D\uDCCB" },
   { label: "イベント", href: "/events", icon: "\uD83D\uDCC5" },
-  { label: "お知らせ", href: "/notices", icon: "\uD83D\uDD14" },
+  { label: "お知らせ", href: "/notices", icon: "\uD83D\uDD14", showBadge: "unread" },
   {
     label: "管理",
     href: "/admin",
@@ -30,6 +32,7 @@ type BottomTabBarProps = {
 
 export function BottomTabBar({ userRole = "resident" }: BottomTabBarProps) {
   const pathname = usePathname();
+  const { unreadCount } = useReadStatus();
 
   const visibleTabs = tabs.filter(
     (tab) => !tab.requireRole || tab.requireRole.includes(userRole)
@@ -48,12 +51,14 @@ export function BottomTabBar({ userRole = "resident" }: BottomTabBarProps) {
               ? pathname === "/"
               : pathname === tab.href || pathname.startsWith(tab.href + "/");
 
+          const badgeCount = tab.showBadge === "unread" ? unreadCount : 0;
+
           return (
             <li key={tab.href} className="flex-1">
               <Link
                 href={tab.href}
                 className={[
-                  "flex flex-col items-center justify-center gap-0.5",
+                  "flex flex-col items-center justify-center gap-0.5 relative",
                   "min-h-[56px] px-1 py-2 text-center no-underline transition-colors duration-150",
                   "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-pink-600",
                   isActive
@@ -62,8 +67,13 @@ export function BottomTabBar({ userRole = "resident" }: BottomTabBarProps) {
                 ].join(" ")}
                 aria-current={isActive ? "page" : undefined}
               >
-                <span className="text-2xl leading-none" aria-hidden="true">
+                <span className="relative text-2xl leading-none" aria-hidden="true">
                   {tab.icon}
+                  {badgeCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                      {badgeCount}
+                    </span>
+                  )}
                 </span>
                 <span className="text-xs font-medium">{tab.label}</span>
               </Link>
