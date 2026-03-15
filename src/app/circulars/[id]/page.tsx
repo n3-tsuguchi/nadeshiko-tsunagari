@@ -1,29 +1,31 @@
+"use client";
+
+import { use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { mockCirculars } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { AlertButton } from "@/components/alert-button";
+import { Button } from "@/components/ui/button";
+import { useReadStatus } from "@/lib/read-status-context";
 
-const CURRENT_USER_ID = "user-1";
-
-export default async function CircularDetailPage({
+export default function CircularDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id } = use(params);
   const circular = mockCirculars.find((c) => c.id === id);
 
   if (!circular) {
     notFound();
   }
 
-  const isRead = circular.readBy.includes(CURRENT_USER_ID);
+  const { isRead, toggleRead } = useReadStatus();
+  const read = isRead(circular.id);
 
   return (
     <div className="max-w-lg mx-auto px-4 py-4">
-      {/* 戻るリンク */}
       <Link
         href="/"
         className="inline-flex items-center gap-1 text-lg text-pink-700 font-medium mb-6 hover:underline"
@@ -31,7 +33,6 @@ export default async function CircularDetailPage({
         ← 一覧に戻る
       </Link>
 
-      {/* カテゴリ・日付・緊急ラベル */}
       <div className="flex items-center flex-wrap gap-2 mb-4">
         <Badge variant={circular.category}>{circular.category}</Badge>
         {circular.isUrgent && (
@@ -42,29 +43,30 @@ export default async function CircularDetailPage({
         </time>
       </div>
 
-      {/* タイトル */}
       <h1 className="text-2xl font-bold leading-snug mb-4">
         {circular.title}
       </h1>
 
-      {/* 本文 */}
       <p className="text-base leading-relaxed whitespace-pre-wrap text-gray-800 mb-6">
         {circular.content}
       </p>
 
-      {/* 既読/未読 */}
       <div className="mb-6">
-        {isRead ? (
+        {read ? (
           <span className="text-lg text-green-700 font-medium">✓ 既読</span>
         ) : (
           <span className="text-lg text-red-600 font-medium">● 未読</span>
         )}
       </div>
 
-      {/* 既読にするボタン */}
-      <AlertButton message="既読にしました（MVP版）">
-        既読にする
-      </AlertButton>
+      <Button
+        variant={read ? "secondary" : "primary"}
+        size="lg"
+        fullWidth
+        onClick={() => toggleRead(circular.id)}
+      >
+        {read ? "未読に戻す" : "既読にする"}
+      </Button>
     </div>
   );
 }
