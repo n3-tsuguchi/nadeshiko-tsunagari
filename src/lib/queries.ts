@@ -276,3 +276,71 @@ export async function leaveEvent(eventId: string, userId: string) {
     console.error("Failed to leave event:", error);
   }
 }
+
+// ─── げんき確認 ──────────────────────────────────────────
+
+export type WellnessStatus = "genki" | "sukoshi" | "tsurai";
+
+export type WellnessCheck = {
+  id: string;
+  userId: string;
+  status: WellnessStatus;
+  checkedAt: string;
+};
+
+export async function getTodayWellness(
+  userId: string
+): Promise<WellnessCheck | null> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await supabase
+    .from("wellness_checks")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("checked_at", today)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    status: data.status as WellnessStatus,
+    checkedAt: data.checked_at,
+  };
+}
+
+export async function submitWellness(userId: string, status: WellnessStatus) {
+  const today = new Date().toISOString().split("T")[0];
+  const { error } = await supabase
+    .from("wellness_checks")
+    .upsert(
+      { user_id: userId, status, checked_at: today },
+      { onConflict: "user_id,checked_at" }
+    );
+
+  if (error) {
+    console.error("Failed to submit wellness:", error);
+  }
+  return !error;
+}
+
+export async function fetchTodayWellnessSummary(): Promise<{
+  total: number;
+  genki: number;
+  sukoshi: number;
+  tsurai: number;
+}> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("wellness_checks")
+    .select("status")
+    .eq("checked_at", today);
+
+  const checks = data ?? [];
+  return {
+    total: checks.length,
+    genki: checks.filter((c) => c.status === "genki").length,
+    sukoshi: checks.filter((c) => c.status === "sukoshi").length,
+    tsurai: checks.filter((c) => c.status === "tsurai").length,
+  };
+}

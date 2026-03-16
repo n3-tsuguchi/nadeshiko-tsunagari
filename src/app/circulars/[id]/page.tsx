@@ -7,6 +7,7 @@ import { fetchCircularById } from "@/lib/queries";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ReadAloudButton } from "@/components/read-aloud-button";
 import { useReadStatus } from "@/lib/read-status-context";
 import type { CircularNotice } from "@/types";
 
@@ -61,6 +62,9 @@ export default function CircularDetailPage({
       <h1 className="text-2xl font-bold leading-snug mb-4">
         {circular.title}
       </h1>
+
+      {/* 音声読み上げボタン */}
+      <ReadAloudButton text={`${circular.title}。${circular.content}`} />
 
       <p className="text-base leading-relaxed whitespace-pre-wrap text-gray-800 mb-6">
         {circular.content}

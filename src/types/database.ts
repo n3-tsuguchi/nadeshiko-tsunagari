@@ -208,6 +208,30 @@ export interface Database {
           },
         ];
       };
+      wellness_checks: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: "genki" | "sukoshi" | "tsurai";
+          checked_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status: "genki" | "sukoshi" | "tsurai";
+          checked_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          status?: "genki" | "sukoshi" | "tsurai";
+          checked_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
