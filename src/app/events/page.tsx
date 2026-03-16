@@ -38,6 +38,7 @@ export default function EventsPage() {
       });
   }, [user]);
 
+  // 日付順（近い順）
   const sortedEvents = [...events].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
