@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
 
 type FontSize = "normal" | "large" | "xlarge";
 
@@ -25,14 +25,14 @@ const FontSizeContext = createContext<FontSizeContextType>({
 });
 
 export function FontSizeProvider({ children }: { children: ReactNode }) {
-  const [fontSize, setFontSizeState] = useState<FontSize>("normal");
+  const [fontSize, setFontSizeState] = useState<FontSize>(() => {
+    if (typeof window === "undefined") return "normal";
+    const saved = localStorage.getItem(FONT_SIZE_KEY);
+    if (saved === "normal" || saved === "large" || saved === "xlarge") return saved;
+    return "normal";
+  });
 
-  useEffect(() => {
-    const saved = localStorage.getItem(FONT_SIZE_KEY) as FontSize | null;
-    if (saved && (saved === "normal" || saved === "large" || saved === "xlarge")) {
-      setFontSizeState(saved);
-    }
-  }, []);
+  const isInitial = useRef(true);
 
   const setFontSize = (size: FontSize) => {
     setFontSizeState(size);
@@ -40,6 +40,9 @@ export function FontSizeProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (isInitial.current) {
+      isInitial.current = false;
+    }
     const html = document.documentElement;
     html.classList.remove("font-size-normal", "font-size-large", "font-size-xlarge");
     html.classList.add(`font-size-${fontSize}`);
