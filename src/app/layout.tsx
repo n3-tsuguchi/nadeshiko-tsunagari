@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/lib/auth-context";
 import { ReadStatusProvider } from "@/lib/read-status-context";
+import { FontSizeProvider } from "@/lib/font-size-context";
 import { AppShell } from "@/components/layout/app-shell";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
@@ -30,10 +31,12 @@ export default function RootLayout({
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <ReadStatusProvider>
-            <PwaRegister />
-            <AppShell>{children}</AppShell>
-          </ReadStatusProvider>
+          <FontSizeProvider>
+            <ReadStatusProvider>
+              <PwaRegister />
+              <AppShell>{children}</AppShell>
+            </ReadStatusProvider>
+          </FontSizeProvider>
         </AuthProvider>
       </body>
     </html>

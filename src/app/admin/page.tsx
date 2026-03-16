@@ -5,19 +5,21 @@ import Link from "next/link";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { fetchCirculars, fetchEvents } from "@/lib/queries";
+import { fetchCirculars, fetchEvents, fetchTodayWellnessSummary } from "@/lib/queries";
 import { formatDate, formatTime } from "@/lib/utils";
 import type { CircularNotice, Event } from "@/types";
 
 export default function AdminDashboard() {
   const [circulars, setCirculars] = useState<CircularNotice[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [wellness, setWellness] = useState({ total: 0, genki: 0, sukoshi: 0, tsurai: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchCirculars(), fetchEvents()]).then(([c, e]) => {
+    Promise.all([fetchCirculars(), fetchEvents(), fetchTodayWellnessSummary()]).then(([c, e, w]) => {
       setCirculars(c);
       setEvents(e);
+      setWellness(w);
       setLoading(false);
     });
   }, []);
@@ -122,8 +124,15 @@ export default function AdminDashboard() {
         <Card>
           <CardBody>
             <p className="text-base text-gray-500">今日のげんき確認</p>
-            <p className="mt-1 text-3xl font-bold text-gray-400">--</p>
-            <p className="mt-1 text-base text-gray-400">準備中</p>
+            <p className="mt-1 text-3xl font-bold text-gray-900">
+              {wellness.total}
+              <span className="ml-1 text-lg font-normal text-gray-500">
+                人
+              </span>
+            </p>
+            <p className="mt-1 text-base text-green-600">
+              😊{wellness.genki} 😐{wellness.sukoshi} 😢{wellness.tsurai}
+            </p>
           </CardBody>
         </Card>
       </div>

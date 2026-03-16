@@ -14,6 +14,14 @@ html {
   font-size: 18px;
 }
 
+html.font-size-large {
+  font-size: 22px;
+}
+
+html.font-size-xlarge {
+  font-size: 26px;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

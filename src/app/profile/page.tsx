@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { useFontSize } from "@/lib/font-size-context";
 
 const AREAS = [
   "東住吉区",
@@ -15,8 +17,15 @@ const AREAS = [
   "その他",
 ] as const;
 
+const FONT_SIZES = [
+  { value: "normal" as const, label: "標準" },
+  { value: "large" as const, label: "大きい" },
+  { value: "xlarge" as const, label: "特大" },
+];
+
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { fontSize, setFontSize } = useFontSize();
   const [name, setName] = useState("");
   const [area, setArea] = useState<string>(AREAS[0]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +144,37 @@ export default function ProfilePage() {
           {saving ? "保存中..." : "保存する"}
         </Button>
       </div>
+
+      {/* 文字サイズ設定 */}
+      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-3">文字の大きさ</h2>
+        <div className="flex gap-3">
+          {FONT_SIZES.map((fs) => (
+            <button
+              key={fs.value}
+              onClick={() => setFontSize(fs.value)}
+              className={[
+                "flex-1 rounded-lg px-4 py-3 text-center font-medium border-2 transition-colors cursor-pointer",
+                fontSize === fs.value
+                  ? "border-pink-500 bg-pink-50 text-pink-700"
+                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+              ].join(" ")}
+            >
+              {fs.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* げんき確認リンク */}
+      <Link
+        href="/wellness"
+        className="mt-6 block rounded-2xl border-2 border-green-300 bg-green-50 px-6 py-5 text-center hover:bg-green-100 transition-colors"
+      >
+        <span className="text-3xl" aria-hidden="true">😊</span>
+        <p className="mt-1 text-lg font-bold text-green-800">今日のげんき確認</p>
+        <p className="text-base text-green-600">体調を教えてください</p>
+      </Link>
     </div>
   );
 }
