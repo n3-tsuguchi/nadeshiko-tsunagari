@@ -130,14 +130,14 @@ export default function AdminDashboard() {
 
       {/* ─── アクションボタン ─────────────────────────────── */}
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Link href="/admin/circulars/new">
+        <Link href="/admin/circulars">
           <Button variant="primary" size="lg" fullWidth>
-            新しい回覧板を作成
+            回覧板管理
           </Button>
         </Link>
-        <Link href="/admin/events/new">
+        <Link href="/admin/events">
           <Button variant="secondary" size="lg" fullWidth>
-            新しいイベントを作成
+            イベント管理
           </Button>
         </Link>
         <Link href="/admin/users">

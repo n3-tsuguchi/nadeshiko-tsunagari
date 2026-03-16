@@ -135,6 +135,63 @@ export async function fetchEventById(id: string): Promise<Event | null> {
   };
 }
 
+// ─── 回覧板 編集・削除 ───────────────────────────────────
+
+export async function updateCircular(
+  id: string,
+  fields: {
+    title: string;
+    content: string;
+    category: CircularNotice["category"];
+    is_urgent: boolean;
+    attachment_url?: string | null;
+  }
+) {
+  const { error } = await supabase
+    .from("circulars")
+    .update(fields)
+    .eq("id", id);
+  if (error) console.error("Failed to update circular:", error);
+  return !error;
+}
+
+export async function deleteCircular(id: string) {
+  const { error } = await supabase.from("circulars").delete().eq("id", id);
+  if (error) console.error("Failed to delete circular:", error);
+  return !error;
+}
+
+// ─── イベント 編集・削除 ─────────────────────────────────
+
+export async function updateEvent(
+  id: string,
+  fields: {
+    title: string;
+    description: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    location: string;
+    organizer: string;
+    category: Event["category"];
+    max_participants?: number | null;
+    image_url?: string | null;
+  }
+) {
+  const { error } = await supabase
+    .from("events")
+    .update(fields)
+    .eq("id", id);
+  if (error) console.error("Failed to update event:", error);
+  return !error;
+}
+
+export async function deleteEvent(id: string) {
+  const { error } = await supabase.from("events").delete().eq("id", id);
+  if (error) console.error("Failed to delete event:", error);
+  return !error;
+}
+
 // ─── 検索 ───────────────────────────────────────────────
 
 export async function searchCirculars(
