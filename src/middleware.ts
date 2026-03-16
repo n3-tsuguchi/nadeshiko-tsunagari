@@ -29,8 +29,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 未ログインでログインページ以外にアクセス → ログインページへリダイレクト
-  if (!user && !request.nextUrl.pathname.startsWith("/login")) {
+  // 未ログインでログインページ・リセットページ以外にアクセス → ログインページへリダイレクト
+  const isPublicPath =
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/reset-password");
+  if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -41,6 +44,22 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // 管理画面へのアクセス制御（officer / admin のみ）
+  if (user && request.nextUrl.pathname.startsWith("/admin")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    const role = profile?.role;
+    if (role !== "admin" && role !== "officer") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
