@@ -66,6 +66,28 @@ export default function CircularDetailPage({
         {circular.content}
       </p>
 
+      {circular.attachmentUrl && (
+        <div className="mb-6 rounded-xl border border-gray-200 overflow-hidden">
+          {circular.attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+            <img
+              src={circular.attachmentUrl}
+              alt="添付画像"
+              className="w-full h-auto"
+            />
+          ) : (
+            <a
+              href={circular.attachmentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-5 py-4 text-lg text-pink-700 font-medium hover:bg-gray-50 transition-colors"
+            >
+              <span aria-hidden="true">📎</span>
+              添付ファイルを開く
+            </a>
+          )}
+        </div>
+      )}
+
       <div className="mb-6">
         {read ? (
           <span className="text-lg text-green-700 font-medium">✓ 既読</span>

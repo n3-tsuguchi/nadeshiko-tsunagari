@@ -24,6 +24,12 @@ export default function NoticesPage() {
 
   const unreadCirculars = circulars.filter((c) => !isRead(c.id));
 
+  const handleMarkAllRead = () => {
+    for (const c of unreadCirculars) {
+      toggleRead(c.id);
+    }
+  };
+
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-4">お知らせ</h1>
@@ -34,10 +40,18 @@ export default function NoticesPage() {
         </p>
       ) : unreadCirculars.length > 0 ? (
         <>
-          <p className="text-lg font-medium text-gray-700 mb-4">
-            未読のお知らせ:{" "}
-            <span className="text-pink-600">{unreadCount}件</span>
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-lg font-medium text-gray-700">
+              未読のお知らせ:{" "}
+              <span className="text-pink-600">{unreadCount}件</span>
+            </p>
+            <button
+              onClick={handleMarkAllRead}
+              className="text-base text-pink-700 font-medium hover:underline cursor-pointer"
+            >
+              すべて既読にする
+            </button>
+          </div>
 
           <div className="space-y-4">
             {unreadCirculars.map((circular) => (
@@ -56,13 +70,13 @@ export default function NoticesPage() {
                           緊急
                         </span>
                       )}
+                      <time className="text-sm text-gray-500 ml-auto">
+                        {formatDate(circular.publishedAt)}
+                      </time>
                     </div>
                     <h2 className="text-lg font-bold leading-snug mb-1">
                       {circular.title}
                     </h2>
-                    <p className="text-sm text-gray-500 mb-2">
-                      {formatDate(circular.publishedAt)}
-                    </p>
                     <p className="text-base text-gray-700 line-clamp-2">
                       {circular.content}
                     </p>
@@ -83,7 +97,9 @@ export default function NoticesPage() {
         </>
       ) : (
         <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-4xl mb-4">🎉</p>
+          <p className="text-4xl mb-4" aria-hidden="true">
+            🎉
+          </p>
           <p className="text-xl font-bold text-gray-600">
             未読のお知らせはありません
           </p>

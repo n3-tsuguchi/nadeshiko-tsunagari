@@ -75,6 +75,17 @@ export default async function EventDetailPage({
         )}
       </div>
 
+      {/* イベント画像 */}
+      {event.imageUrl && (
+        <div className="mb-6 rounded-xl overflow-hidden">
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="w-full h-auto"
+          />
+        </div>
+      )}
+
       {/* 説明文 */}
       <p className="text-base leading-relaxed whitespace-pre-wrap text-gray-800 mb-6">
         {event.description}
