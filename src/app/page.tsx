@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { fetchCirculars, searchCirculars } from "@/lib/queries";
 import { formatDate } from "@/lib/utils";
@@ -19,7 +19,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const { isRead, toggleRead } = useReadStatus();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 初回ロード
   useEffect(() => {
     fetchCirculars().then((data) => {
       setCirculars(data);
@@ -27,19 +29,21 @@ export default function Home() {
     });
   }, []);
 
-  const handleSearch = useCallback(async () => {
-    const q = searchQuery.trim();
-    if (!q) {
+  // リアルタイム検索（300msデバウンス）
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      const q = searchQuery.trim();
       setSearching(true);
-      const data = await fetchCirculars();
+      const data = q ? await searchCirculars(q) : await fetchCirculars();
       setCirculars(data);
       setSearching(false);
-      return;
-    }
-    setSearching(true);
-    const results = await searchCirculars(q);
-    setCirculars(results);
-    setSearching(false);
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [searchQuery]);
 
   const filtered =
@@ -58,30 +62,23 @@ export default function Home() {
   return (
     <div className="max-w-lg mx-auto px-4 py-4">
       {/* 検索バー */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSearch();
-        }}
-        className="mb-4"
-      >
-        <div className="flex gap-2">
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="回覧板を検索..."
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-          />
-          <button
-            type="submit"
-            disabled={searching}
-            className="shrink-0 rounded-lg bg-pink-600 px-5 py-3 text-lg font-medium text-white hover:bg-pink-700 transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            検索
-          </button>
-        </div>
-      </form>
+      <div className="mb-4 relative">
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="回覧板を検索..."
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-11 text-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+        />
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true">
+          🔍
+        </span>
+        {searching && (
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+            検索中...
+          </span>
+        )}
+      </div>
 
       {/* カテゴリフィルター */}
       <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">

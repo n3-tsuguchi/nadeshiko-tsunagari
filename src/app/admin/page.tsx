@@ -6,6 +6,8 @@ import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fetchCirculars, fetchEvents, fetchTodayWellnessSummary } from "@/lib/queries";
+import { supabase } from "@/lib/supabase";
+import { exportCircularReads, exportEventParticipants } from "@/lib/csv-export";
 import { formatDate, formatTime } from "@/lib/utils";
 import type { CircularNotice, Event } from "@/types";
 
@@ -13,13 +15,20 @@ export default function AdminDashboard() {
   const [circulars, setCirculars] = useState<CircularNotice[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [wellness, setWellness] = useState({ total: 0, genki: 0, sukoshi: 0, tsurai: 0 });
+  const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchCirculars(), fetchEvents(), fetchTodayWellnessSummary()]).then(([c, e, w]) => {
+    Promise.all([
+      fetchCirculars(),
+      fetchEvents(),
+      fetchTodayWellnessSummary(),
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
+    ]).then(([c, e, w, profilesRes]) => {
       setCirculars(c);
       setEvents(e);
       setWellness(w);
+      setUserCount(profilesRes.count ?? 0);
       setLoading(false);
     });
   }, []);
@@ -30,7 +39,7 @@ export default function AdminDashboard() {
     (sum, c) => sum + c.readBy.length,
     0
   );
-  const totalPossibleReads = totalCirculars * 3; // 仮の住民数
+  const totalPossibleReads = totalCirculars * (userCount || 1);
   const unreadRate =
     totalPossibleReads > 0
       ? Math.round(
@@ -113,7 +122,7 @@ export default function AdminDashboard() {
           <CardBody>
             <p className="text-base text-gray-500">登録住民</p>
             <p className="mt-1 text-3xl font-bold text-gray-900">
-              3
+              {userCount}
               <span className="ml-1 text-lg font-normal text-gray-500">
                 人
               </span>
@@ -154,6 +163,22 @@ export default function AdminDashboard() {
             ユーザー管理
           </Button>
         </Link>
+      </div>
+
+      {/* ─── データ出力 ───────────────────────────────────── */}
+      <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <button
+          onClick={exportCircularReads}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+        >
+          回覧板の既読データをCSV出力
+        </button>
+        <button
+          onClick={exportEventParticipants}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+        >
+          イベント参加者をCSV出力
+        </button>
       </div>
 
       {/* ─── 最近の回覧板 ─────────────────────────────────── */}
